@@ -1,0 +1,26 @@
+{
+  "name": "alexa-caltrain",
+  "version": "1.0.0",
+  "description": "Ask Alexa for the next few Caltrain departures",
+  "main": "index.js",
+  "scripts": {
+    "pretest": "eslint . --fix",
+    "test": "mocha --reporter spec *.test.js",
+    "test-w": "mocha --watch --reporter spec *.test.js"
+  },
+  "author": "Pretty Good Apps",
+  "license": "ISC",
+  "dependencies": {
+    "moment": "^2.13.0",
+    "moment-timezone": "^0.5.4",
+    "nextcaltrain": "^2.1.2"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "eslint": "^2.13.1",
+    "eslint-config-airbnb": "^9.0.1",
+    "eslint-plugin-import": "^1.10.0",
+    "eslint-plugin-jsx-a11y": "^1.5.3",
+    "mocha": "^2.5.3"
+  }
+}

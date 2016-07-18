@@ -1,0 +1,9 @@
+{
+    "extends": "eslint:recommended",
+    "plugins": [],
+    "rules": {
+        "no-console": "off",
+        "semi": ["error", "always"],
+        "quotes": ["error", "single"]
+    }
+}
