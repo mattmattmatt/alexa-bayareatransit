@@ -2,6 +2,7 @@
 
 const moment = require('moment-timezone');
 const caltrain = require('./caltrain');
+const deferred = require('deferred');
 
 function areStationsValid(slots) {
     if (!(slots && slots.from && slots.from.value)) {
@@ -31,6 +32,7 @@ function answerNoTripsFound(slots) {
 }
 
 exports.getNextTrain = function(intent, session, callback) {
+    var def = deferred();
     var repromptText = null;
     var shouldEndSession = true;
     var speechOutput = '';
@@ -38,26 +40,29 @@ exports.getNextTrain = function(intent, session, callback) {
     var validSoFar = areStationsValid(intent.slots);
     if (!validSoFar.result) {
         callback({}, buildResponse(validSoFar.message, repromptText, validSoFar.shouldEndSession));
-        return validSoFar.message;
+        def.resolve(validSoFar.message);
+        return def.promise;
     }
 
-    var trips = caltrain(intent.slots.from.value, intent.slots.to.value);
+    caltrain(intent.slots.from.value, intent.slots.to.value).then(function(trips) {
+        if (!trips.length) {
+            var noTrips = answerNoTripsFound(intent.slots);
+            callback({}, buildResponse(noTrips.speechOutput, noTrips.repromptText, noTrips.shouldEndSession));
+            def.resolve(noTrips.speechOutput);
+            return def.promise;
+        }
 
-    if (!trips.length) {
-        var res = answerNoTripsFound(intent.slots);
-        callback({}, buildResponse(res.speechOutput, res.repromptText, res.shouldEndSession));
-        return res.speechOutput;
-    }
-
-    speechOutput = 'The next train from ' + intent.slots.from.value + ' to ' + intent.slots.to.value +
+        speechOutput = 'The next train from ' + intent.slots.from.value + ' to ' + intent.slots.to.value +
         ' will take ' + trips[0].durationInMinutes + ' and leaves ' + trips[0].timeToDepartureInMinutes + '. ';
 
-    callback({}, buildResponse(speechOutput, repromptText, shouldEndSession));
-
-    return speechOutput;
+        callback({}, buildResponse(speechOutput, repromptText, shouldEndSession));
+        def.resolve(speechOutput);
+    });
+    return def.promise;
 };
 
 exports.getNextTrains = function(intent, session, callback) {
+    var def = deferred();
     var repromptText = null;
     var shouldEndSession = true;
     var speechOutput = '';
@@ -65,7 +70,8 @@ exports.getNextTrains = function(intent, session, callback) {
     var validSoFar = areStationsValid(intent.slots);
     if (!validSoFar.result) {
         callback({}, buildResponse(validSoFar.message, repromptText, validSoFar.shouldEndSession));
-        return validSoFar.message;
+        def.resolve(validSoFar.message);
+        return def.promise;
     }
 
     var count = parseInt(intent.slots.count && intent.slots.count.value, 10) || 1;
@@ -74,26 +80,28 @@ exports.getNextTrains = function(intent, session, callback) {
         return exports.getNextTrain(intent, session, callback);
     }
 
-    var trips = caltrain(intent.slots.from.value, intent.slots.to.value, undefined, count);
+    caltrain(intent.slots.from.value, intent.slots.to.value, undefined, count).then(function(trips) {
+        if (!trips.length) {
+            var noTrips = answerNoTripsFound(intent.slots);
+            callback({}, buildResponse(noTrips.speechOutput, noTrips.repromptText, noTrips.shouldEndSession));
+            def.resolve(noTrips.speechOutput);
+            return def.promise;
+        }
 
-    if (!trips.length) {
-        var res = answerNoTripsFound(intent.slots);
-        callback({}, buildResponse(res.speechOutput, res.repromptText, res.shouldEndSession));
-        return res.speechOutput;
-    }
+        speechOutput = 'The next ' + count + ' trains from ' + intent.slots.from.value + ' to ' + intent.slots.to.value + ': ';
+        trips.forEach(function(trip) {
+            speechOutput += 'Travelling for ' + trip.durationInMinutes + ', leaving ' + trip.timeToDepartureInMinutes + '. ';
+        });
+        speechOutput += 'Have a great trip!';
 
-    speechOutput = 'The next ' + count + ' trains from ' + intent.slots.from.value + ' to ' + intent.slots.to.value + ': ';
-    trips.forEach(function(trip) {
-        speechOutput += 'Travelling for ' + trip.durationInMinutes + ', leaving ' + trip.timeToDepartureInMinutes + '. ';
+        callback({}, buildResponse(speechOutput, repromptText, shouldEndSession));
+        def.resolve(speechOutput);
     });
-    speechOutput += 'Have a great trip!';
-
-    callback({}, buildResponse(speechOutput, repromptText, shouldEndSession));
-
-    return speechOutput;
+    return def.promise;
 };
 
 exports.getNextTrainsFuture = function(intent, session, callback) {
+    var def = deferred();
     var repromptText = null;
     var shouldEndSession = true;
     var speechOutput = '';
@@ -101,7 +109,8 @@ exports.getNextTrainsFuture = function(intent, session, callback) {
     var validSoFar = areStationsValid(intent.slots);
     if (!validSoFar.result) {
         callback({}, buildResponse(validSoFar.message, repromptText, validSoFar.shouldEndSession));
-        return validSoFar.message;
+        def.resolve(validSoFar.message);
+        return def.promise;
     }
 
     var count = parseInt(intent.slots.count && intent.slots.count.value, 10) || 1;
@@ -116,27 +125,29 @@ exports.getNextTrainsFuture = function(intent, session, callback) {
     }
 
     var tripStartDate = moment().tz('America/Los_Angeles').add(delta);
-    var trips = caltrain(intent.slots.from.value, intent.slots.to.value, tripStartDate, count);
+    caltrain(intent.slots.from.value, intent.slots.to.value, tripStartDate, count).then(function(trips) {
+        if (!trips.length) {
+            var noTrips = answerNoTripsFound(intent.slots);
+            callback({}, buildResponse(noTrips.speechOutput, noTrips.repromptText, noTrips.shouldEndSession));
+            def.resolve(noTrips.speechOutput);
+            return def.promise;
+        }
 
-    if (!trips.length) {
-        var res = answerNoTripsFound(intent.slots);
-        callback({}, buildResponse(res.speechOutput, res.repromptText, res.shouldEndSession));
-        return res.speechOutput;
-    }
+        var isTripInFuture = tripStartDate.isAfter(moment());
+        speechOutput = 'The next ' + count + ' trains from ' + intent.slots.from.value + ' to ' + intent.slots.to.value + ', starting ' + delta.humanize(true) + ': ';
+        trips.forEach(function(trip) {
+            speechOutput += 'Travelling for ' + trip.durationInMinutes + ', ' + (isTripInFuture ? 'leaving ' : 'left ') + trip.timeToDepartureInMinutes + '. ';
+        });
+        speechOutput += 'Have a great trip!';
 
-    var isTripInFuture = tripStartDate.isAfter(moment());
-    speechOutput = 'The next ' + count + ' trains from ' + intent.slots.from.value + ' to ' + intent.slots.to.value + ', starting ' + delta.humanize(true) + ': ';
-    trips.forEach(function(trip) {
-        speechOutput += 'Travelling for ' + trip.durationInMinutes + ', ' + (isTripInFuture ? 'leaving ' : 'left ') + trip.timeToDepartureInMinutes + '. ';
+        callback({}, buildResponse(speechOutput, repromptText, shouldEndSession));
+        def.resolve(speechOutput);
     });
-    speechOutput += 'Have a great trip!';
-
-    callback({}, buildResponse(speechOutput, repromptText, shouldEndSession));
-
-    return speechOutput;
+    return def.promise;
 };
 
 exports.getNextTrainFuture = function(intent, session, callback) {
+    var def = deferred();
     var repromptText = null;
     var shouldEndSession = true;
     var speechOutput = '';
@@ -144,7 +155,8 @@ exports.getNextTrainFuture = function(intent, session, callback) {
     var validSoFar = areStationsValid(intent.slots);
     if (!validSoFar.result) {
         callback({}, buildResponse(validSoFar.message, repromptText, validSoFar.shouldEndSession));
-        return validSoFar.message;
+        def.resolve(validSoFar.message);
+        return def.promise;
     }
 
     var delta = moment.duration(intent.slots.delta && intent.slots.delta.value);
@@ -152,22 +164,23 @@ exports.getNextTrainFuture = function(intent, session, callback) {
         return exports.getNextTrain(intent, session, callback);
     }
     var tripStartDate = moment().tz('America/Los_Angeles').add(delta);
-    var trips = caltrain(intent.slots.from.value, intent.slots.to.value, tripStartDate);
+    caltrain(intent.slots.from.value, intent.slots.to.value, tripStartDate).then(function(trips) {
+        if (!trips.length) {
+            var noTrips = answerNoTripsFound(intent.slots);
+            callback({}, buildResponse(noTrips.speechOutput, noTrips.repromptText, noTrips.shouldEndSession));
+            def.resolve(noTrips.speechOutput);
+            return def.promise;
+        }
 
-    if (!trips.length) {
-        var res = answerNoTripsFound(intent.slots);
-        callback({}, buildResponse(res.speechOutput, res.repromptText, res.shouldEndSession));
-        return res.speechOutput;
-    }
-
-    var isTripInFuture = tripStartDate.isAfter(moment());
-    speechOutput = 'The next train ' + delta.humanize() + (isTripInFuture ? ' from now' : ' ago') + ' will take ' + trips[0].durationInMinutes +
+        var isTripInFuture = tripStartDate.isAfter(moment());
+        speechOutput = 'The next train ' + delta.humanize() + (isTripInFuture ? ' from now' : ' ago') + ' will take ' + trips[0].durationInMinutes +
         ' from ' + intent.slots.from.value + ' to ' + intent.slots.to.value +
         ' and' + (isTripInFuture ? ' leaves ' : ' left ') + trips[0].timeToDepartureInMinutes + '. ';
 
-    callback({}, buildResponse(speechOutput, repromptText, shouldEndSession));
-
-    return speechOutput;
+        callback({}, buildResponse(speechOutput, repromptText, shouldEndSession));
+        def.resolve(speechOutput);
+    });
+    return def.promise;
 };
 
 

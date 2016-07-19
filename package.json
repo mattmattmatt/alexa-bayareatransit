@@ -11,6 +11,9 @@
   "author": "Pretty Good Apps",
   "license": "ISC",
   "dependencies": {
+    "bay-area-rapid-transit": "^0.4.1",
+    "chai-as-promised": "^5.3.0",
+    "deferred": "^0.7.5",
     "moment": "^2.13.0",
     "moment-timezone": "^0.5.4",
     "nextcaltrain": "^2.1.2"
