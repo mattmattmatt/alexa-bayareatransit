@@ -2,6 +2,7 @@
 
 var deferred = require('deferred');
 var bart = new require('bay-area-rapid-transit')('MW9S-E7SL-26DU-VV8V');
+var stopMap = require('./bart-mappings');
 
 const moment = require('moment-timezone');
 moment.relativeTimeThreshold('m', 66);
@@ -21,12 +22,12 @@ function getMoreSchedules(from, to, date) {
         time: date.format('h:mm a'),
         orig: from,
         dest: to,
-        b: 0,
+        b: 2,
         a: 4
     });
 }
 
-function gatherSchedules(schedules, from, to, date, stopCount) {
+function gatherSchedules(schedules, from, to, date, stopCount, inInPast) {
     if (schedules.length >= stopCount) {
         // remove elements of result that were not asked for
         schedules.splice(stopCount);
@@ -38,7 +39,13 @@ function gatherSchedules(schedules, from, to, date, stopCount) {
             tripDate = moment(new Date(lastTrip.origTimeDate + ' ' + lastTrip.origTimeMin)).add(1, 'minutes');
         }
         return getMoreSchedules(from, to, tripDate).then(function(result) {
-            return gatherSchedules(schedules.concat(result), from, to, date, stopCount);
+            if (!inInPast) {
+                // filter trips that are less than a minute into the future to avoid returning missed trips
+                result = result.filter(function(trip) {
+                    return moment(new Date(trip.origTimeDate + ' ' + trip.origTimeMin)).tz('America/Los_Angeles').isAfter(moment().tz('America/Los_Angeles').add(1, 'minutes'));
+                });
+            }
+            return gatherSchedules(schedules.concat(result), from, to, date, stopCount, inInPast);
         });
     }
 }
@@ -46,12 +53,20 @@ function gatherSchedules(schedules, from, to, date, stopCount) {
 function getSchedules(from, to, date, stopCount) {
     var def = deferred();
     stopCount = parseInt(stopCount, 10) || 1;
-    date = moment(date);
+    date = moment(date).tz('America/Los_Angeles');
 
     if (typeof from !== 'string' || typeof to !== 'string' || typeof date !== 'object' || typeof stopCount !== 'number') {
         def.resolve([]);
     } else {
-        gatherSchedules([], from, to, date, stopCount).then(function(result) {
+        var mappedFrom = stopMap[(from || '').toLowerCase()];
+        var mappedTo = stopMap[(to || '').toLowerCase()];
+
+        if (typeof mappedFrom !== 'string' || typeof mappedTo !== 'string') {
+            def.resolve([]);
+            return def.promise;
+        }
+
+        gatherSchedules([], mappedFrom, mappedTo, date, stopCount, date.isBefore(moment().tz('America/Los_Angeles').subtract(1, 'minutes'))).then(function(result) {
             result = result.filter(function(trip) {
                 return typeof trip !== 'undefined';
             });

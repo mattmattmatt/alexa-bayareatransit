@@ -7,7 +7,7 @@ test-w:
 	npm run test-w
 
 zip:
-	zip -r -9 _upload.zip * -x '*.psd'
+	zip -r -9 _upload.zip * -x '*.psd' -x '.git'
 
 upload:
 	aws s3api put-object --bucket caltrainupload --key code.zip --body ./_upload.zip

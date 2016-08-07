@@ -76,10 +76,12 @@ function testSchedule(schedules, def) {
 }
 
 describe('Schedules', function() {
+    this.timeout(5000);
+
     describe('Bart', function() {
         testSchedule(bart, {
-            from: 'mcar',
-            to: '19th',
+            from: 'civic centre',
+            to: 'west oakland',
             date: (new Date()),
             moment: moment().tz('America/Los_Angeles')
         });

@@ -47,14 +47,22 @@ function onIntent(intentRequest, session, callback) {
     var intent = intentRequest.intent,
         intentName = intentRequest.intent.name;
 
-    if ('GetNextTrain' === intentName) {
-        intents.getNextTrain(intent, session, callback);
-    } else if ('GetNextTrains' === intentName) {
-        intents.getNextTrains(intent, session, callback);
-    } else if ('GetNextTrainsFuture' === intentName) {
-        intents.getNextTrainsFuture(intent, session, callback);
-    } else if ('GetNextTrainFuture' === intentName) {
-        intents.getNextTrainFuture(intent, session, callback);
+    if ('GetNextTrainCaltrain' === intentName) {
+        intents.getNextTrain(intent, session, callback, 'caltrain');
+    } else if ('GetNextTrainsCaltrain' === intentName) {
+        intents.getNextTrains(intent, session, callback, 'caltrain');
+    } else if ('GetNextTrainsFutureCaltrain' === intentName) {
+        intents.getNextTrainsFuture(intent, session, callback, 'caltrain');
+    } else if ('GetNextTrainFutureCaltrain' === intentName) {
+        intents.getNextTrainFuture(intent, session, callback, 'caltrain');
+    } else if ('GetNextTrainBart' === intentName) {
+        intents.getNextTrain(intent, session, callback, 'bart');
+    } else if ('GetNextTrainsBart' === intentName) {
+        intents.getNextTrains(intent, session, callback, 'bart');
+    } else if ('GetNextTrainsFutureBart' === intentName) {
+        intents.getNextTrainsFuture(intent, session, callback, 'bart');
+    } else if ('GetNextTrainFutureBart' === intentName) {
+        intents.getNextTrainFuture(intent, session, callback, 'bart');
     } else if ('AMAZON.HelpIntent' === intentName) {
         intents.getWelcomeResponse(callback);
     } else if ('AMAZON.StopIntent' === intentName || 'AMAZON.CancelIntent' === intentName) {
