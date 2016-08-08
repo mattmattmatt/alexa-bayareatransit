@@ -7,7 +7,9 @@ const expect = chai.expect;
 const bart = require('./bart');
 const caltrain = require('./caltrain');
 const moment = require('moment-timezone');
+const intents = require('./intents');
 
+intents.configure({shouldLog: false});
 bart.configure({shouldLog: false});
 caltrain.configure({shouldLog: false});
 

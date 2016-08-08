@@ -1,4 +1,5 @@
 'strict';
+/* eslint-env node, mocha, es6 */
 
 const chaiAsPromised = require('chai-as-promised');
 const chai = require('chai');
@@ -10,16 +11,19 @@ const handler = require('./index').handler;
 describe('Handler', function() {
     const event = {
         'session': {
+            'sessionId': 'SessionId.BLARG',
             'application': {
                 'applicationId': 'amzn1.echo-sdk-ams.app.eb4c69c2-5e93-4034-a40a-66b736fa575c'
             },
             'attributes': {},
             'user': {
+                'userId': 'amzn1.ask.account.BLARG'
             },
             'new': true
         },
         'request': {
             'type': 'IntentRequest',
+            'requestId': 'EdwRequestId.BLARG',
             'locale': 'en-US',
             'timestamp': '2016-08-07T02:22:55Z',
             'intent': {

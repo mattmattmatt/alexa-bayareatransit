@@ -7,6 +7,7 @@ chai.use(chaiAsPromised);
 const expect = chai.expect;
 const intents = require('./intents');
 
+intents.configure({shouldLog: false});
 
 describe('Intents', function() {
     var def;
@@ -144,7 +145,7 @@ describe('Intents', function() {
             def.intent.slots.toCaltrain.value = 'Palo Alto';
             def.intent.slots.fromBart.value = 'Civic Centre';
             def.intent.slots.toBart.value = 'Oakland City';
-            def.intent.slots.delta.value = 'PT60M';
+            def.intent.slots.delta.value = 'PT90M';
             return expect(fn(def.intent, def.ses, def.cb, serviceProvider)).to.eventually.match(/The next train [\w ]+ from now will take [\w ]+ from [\w ]+ to [\w ]+ and leaves in [\w ]+\. /);
         });
 

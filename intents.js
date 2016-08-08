@@ -5,6 +5,14 @@ const caltrain = require('./caltrain');
 const bart = require('./bart');
 const deferred = require('deferred');
 
+var shouldLog = true;
+
+function log() {
+    if (shouldLog) {
+        console.log.apply(console, arguments);
+    }
+}
+
 function areStationsValid(from, to) {
     if (!(from && from.value)) {
         return {
@@ -54,6 +62,8 @@ exports.getNextTrain = function(intent, session, callback, serviceProvider) {
             scheduleProvider = caltrain;
     }
 
+    log('getNextTrain', serviceProvider, from.value, to.value);
+
     var validSoFar = areStationsValid(from, to);
     if (!validSoFar.result) {
         callback({}, buildResponse(validSoFar.message, repromptText, validSoFar.shouldEndSession));
@@ -99,6 +109,8 @@ exports.getNextTrains = function(intent, session, callback, serviceProvider) {
             to = intent.slots.toCaltrain;
             scheduleProvider = caltrain;
     }
+
+    log('getNextTrains', serviceProvider, from.value, to.value, intent.slots.count);
 
     var validSoFar = areStationsValid(from, to);
     if (!validSoFar.result) {
@@ -154,6 +166,8 @@ exports.getNextTrainsFuture = function(intent, session, callback, serviceProvide
             to = intent.slots.toCaltrain;
             scheduleProvider = caltrain;
     }
+
+    log('getNextTrainsFuture', serviceProvider, from.value, to.value, intent.slots.count, intent.slots.delta);
 
     var validSoFar = areStationsValid(from, to);
     if (!validSoFar.result) {
@@ -217,6 +231,8 @@ exports.getNextTrainFuture = function(intent, session, callback, serviceProvider
             scheduleProvider = caltrain;
     }
 
+    log('getNextTrainFuture', serviceProvider, from.value, to.value, intent.slots.delta);
+
     var validSoFar = areStationsValid(from, to);
     if (!validSoFar.result) {
         callback({}, buildResponse(validSoFar.message, repromptText, validSoFar.shouldEndSession));
@@ -250,7 +266,7 @@ exports.getNextTrainFuture = function(intent, session, callback, serviceProvider
 
 
 exports.getWelcomeResponse = function(callback) {
-    var speechOutput = 'Welcome to "Bay Area transit". Ask me for cal train trips from one station to another.';
+    var speechOutput = 'Welcome to "Bay Area transit". Ask me for bart or cal train trips!';
     var repromptText = 'You can say something like "in twenty minutes from San Francisco to Mountain View". Where do you want to go?';
     var shouldEndSession = false;
 
@@ -285,3 +301,10 @@ function buildResponse(output, repromptText, shouldEndSession) {
         shouldEndSession: shouldEndSession
     };
 }
+
+
+function configure(conf) {
+    shouldLog = conf.shouldLog;
+}
+
+module.exports.configure = configure;
